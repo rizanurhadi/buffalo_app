@@ -12,6 +12,7 @@ import (
 	"github.com/gobuffalo/buffalo-pop/v2/pop/popmw"
 	csrf "github.com/gobuffalo/mw-csrf"
 	i18n "github.com/gobuffalo/mw-i18n"
+	tokenauth "github.com/gobuffalo/mw-tokenauth"
 	"github.com/gobuffalo/packr/v2"
 )
 
@@ -56,11 +57,20 @@ func App() *buffalo.App {
 		// Remove to disable this.
 		app.Use(popmw.Transaction(models.DB))
 
+		// Save AuthMiddleware function.
+		AuthMiddleware := tokenauth.New(tokenauth.Options{})
+		// Adding to my api the function.
+		app.Use(AuthMiddleware)
+		// Disable Auth Middleware in these fuctions
+		app.Middleware.Skip(AuthMiddleware, AuthLogin)
+
 		// Setup and use translations:
 		app.Use(translations())
 
 		app.GET("/", HomeHandler)
 
+		app.Resource("/users", UsersResource{})
+		app.POST("/users/auth", AuthLogin)
 		app.ServeFiles("/", assetsBox) // serve files from the public directory
 	}
 
